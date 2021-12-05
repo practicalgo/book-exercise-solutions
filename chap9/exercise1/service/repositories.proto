@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "users.proto";
+
+option go_package = "github.com/practicalgo/code/chap9/server-streaming/service";
+
+service Repo {
+  rpc GetRepos (RepoGetRequest) returns (stream RepoGetReply) {}
+  rpc CreateBuild (Repository) returns (stream RepoBuildLog) {}
+}
+
+message RepoGetRequest {
+  string id = 2;  
+  string creator_id = 1;
+}
+
+message Repository {
+  string id = 1;
+  string name = 2;
+  string url = 3;  
+  User owner = 4;
+}
+
+message RepoGetReply {
+  Repository repo = 1;
+}
+
+message RepoBuildLog {
+  string log_line = 1;
+  google.protobuf.Timestamp timestamp = 2;
+}
