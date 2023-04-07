@@ -36,15 +36,6 @@ http: A HTTP client.
 
 http: <options> server
 
-Options: 
-  -body string
-    	JSON data for HTTP POST request
-  -body-file string
-    	File containing JSON data for HTTP POST request
-  -output string
-    	File path to write the response into
-  -verb string
-    	HTTP method (default "GET")
 `
 
 	ts := startTestHttpServer()
@@ -122,7 +113,7 @@ Options:
 		if len(tc.output) != 0 {
 			gotOutput := byteBuf.String()
 			if tc.output != gotOutput {
-				t.Errorf("Expected output to be: %#v, Got: %#v", tc.output, gotOutput)
+				t.Errorf("Expected output to be:\n%#v\n\n%#v\n", tc.output, gotOutput)
 			}
 		}
 		byteBuf.Reset()

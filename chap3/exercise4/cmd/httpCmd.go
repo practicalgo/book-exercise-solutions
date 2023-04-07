@@ -62,6 +62,8 @@ func HandleHttp(w io.Writer, args []string) error {
 	var outputFile string
 	var postBodyFile string
 	var responseBody []byte
+	var uploadFile string
+	var formDataKv string
 
 	fs := flag.NewFlagSet("http", flag.ContinueOnError)
 	fs.SetOutput(w)
@@ -69,6 +71,8 @@ func HandleHttp(w io.Writer, args []string) error {
 	fs.StringVar(&c.postBody, "body", "", "JSON data for HTTP POST request")
 	fs.StringVar(&postBodyFile, "body-file", "", "File containing JSON data for HTTP POST request")
 	fs.StringVar(&outputFile, "output", "", "File path to write the response into")
+	fs.StringVar(&uploadFile, "upload", "", "Path of file to upload")
+	fs.StringVar(&formDataKv, "form-data", "", "Key value pairs (key=value) to send as form data")
 
 	fs.Usage = func() {
 		var usageString = `

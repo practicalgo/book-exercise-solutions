@@ -1,3 +1,3 @@
-module github.com/practicalgo/book-exercise-solutions/chap3/exercise3
+module github.com/practicalgo/book-exercise-solutions/chap3/exercise4
 
 go 1.17
