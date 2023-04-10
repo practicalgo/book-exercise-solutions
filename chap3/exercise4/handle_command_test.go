@@ -6,31 +6,7 @@ import (
 )
 
 func TestHandleCommand(t *testing.T) {
-	usageMessage := `Usage: mync [http|grpc] -h
-
-http: A HTTP client.
-
-http: <options> server
-
-Options: 
-  -body string
-    	JSON data for HTTP POST request
-  -body-file string
-    	File containing JSON data for HTTP POST request
-  -output string
-    	File path to write the response into
-  -verb string
-    	HTTP method (default "GET")
-
-grpc: A gRPC client.
-
-grpc: <options> server
-
-Options: 
-  -body string
-    	Body of request
-  -method string
-    	Method to call
+	usageMessage :=     	Method to call
 `
 	testConfigs := []struct {
 		args   []string
