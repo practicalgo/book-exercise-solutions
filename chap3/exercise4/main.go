@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/practicalgo/book-exercise-solutions/chap3/exercise3/cmd"
+	"github.com/practicalgo/book-exercise-solutions/chap3/exercise4/cmd"
 )
 
 var errInvalidSubCommand = errors.New("Invalid sub-command specified")

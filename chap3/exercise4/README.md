@@ -1,33 +1,78 @@
-# Solution to Exercise 3.3
+# Solution to Exercise 3.4
 
 This is my workflow in creating the solution:
 
-- Copy all the code from solution of chapter 3, exercise 2.
+- Copy all the code from solution of chapter 3, exercise 3.
 
 In the `cmd` package:
 
-1. Add the following test configurations in `handle_http_test.go`:
+1. Update the `usageMessage` in `TestHandleHttp` to include two new options,
+   `upload` and `form-data`
+2. Run the TestHandleHttp test
+3. To fix the test, add two new options, `body-file` and `form-data` to accept 
+   string values
+
+4. Add the following test configurations to `testConfigs` in `handle_http_test.go`:
 ```
 {
-		args:   []string{"-verb", "POST", "-body", "", ts.URL + "/upload"},
-		err:    ErrInvalidHTTPPostRequest,
-		output: "HTTP POST request must specify a non-empty JSON body\n",
-},
-{
-		args:   []string{"-verb", "POST", "-body", jsonBody, ts.URL + "/upload"},
-		err:    nil,
-		output: fmt.Sprintf("JSON request received: %d bytes\n", len(jsonBody)),
-},
-{
-		args:   []string{"-verb", "POST", "-body-file", jsonBodyFile, ts.URL + "/upload"},
-		err:    nil,
-		output: fmt.Sprintf("JSON request received: %d bytes\n", len(jsonBody)),
-},
+			args: []string{
+				"-verb", "POST",
+				"-upload", uploadFile,
+				"-form-data", "filename=test.data",
+				"-form-data", "version=0.1",
+				ts.URL + "/upload",
+			},
+			err: nil,
+			output: fmt.Sprintf(
+				"HTTP POST request received:filename=test.data,version=0.1,upload=%d bytes",
+				len(uploadFile),
+			),
+		},
+		{
+			args: []string{
+				"-verb", "POST",
+				"-body-file", jsonBody,
+				"-upload", uploadFile,
+				"-form-data", "filename=test.data",
+				"-form-data", "version=0.1",
+				ts.URL + "/upload",
+			},
+			err: nil,
+			output: fmt.Sprintf(
+				"HTTP POST request received:json=%d bytes,filename=test.data,version=0.1,upload=%d bytes",
+				len(jsonBody), len(uploadFile),
+			),
+		},
+		{
+			args: []string{
+				"-verb", "POST",
+				"-body", jsonBody,
+				"-upload", uploadFile,
+				"-form-data", "filename=test.data",
+				"-form-data", "version=0.1",
+				ts.URL + "/upload",
+			},
+			err: nil,
+			output: fmt.Sprintf(
+				"HTTP POST request received:json=%d bytes,filename=test.data,version=0.1,upload=%d bytes",
+				len(jsonBody), len(uploadFile),
+			),
+		},
+```
+
+3. We create a file in the temporary directory to upload:
+
+```
+uploadData := "This is some data"
+	uploadFile := filepath.Join(t.TempDir(), "file.data")
+	err = os.WriteFile(uploadFile, []byte(uploadData), 0666)
+	if err != nil {
+		t.Fatal(err)
+	}
 ```
 
 Now, the test function will fail for these configurations.
 
-2. Add two new options, `body`  and `body-file` to `httpCmd.go` to have string values
 3. If any of this option is specified and a HTTP POST request is made, the data will be sent to the URL as the body
    of a test request
 4. For the test server, implement a handler function for `/upload`, as follows:

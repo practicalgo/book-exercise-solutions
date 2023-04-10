@@ -31,12 +31,10 @@ func startTestHttpServer() *httptest.Server {
 }
 
 func TestHandleHttp(t *testing.T) {
-	usageMessage := `
-http: A HTTP client.
-
-http: <options> server
-
-`
+	usageMessage, err := os.ReadFile("httpCmdUsage.golden.1")
+	if err != nil {
+		t.Fatalf("error reading httpCmdUsage.golden.1")
+	}
 
 	ts := startTestHttpServer()
 	defer ts.Close()
@@ -44,7 +42,13 @@ http: <options> server
 	outputFile := filepath.Join(t.TempDir(), "file_path.out")
 	jsonBody := `{"id":1}`
 	jsonBodyFile := filepath.Join(t.TempDir(), "data.json")
-	err := os.WriteFile(jsonBodyFile, []byte(jsonBody), 0666)
+	err = os.WriteFile(jsonBodyFile, []byte(jsonBody), 0666)
+	if err != nil {
+		t.Fatal(err)
+	}
+	uploadData := "This is some data"
+	uploadFile := filepath.Join(t.TempDir(), "file.data")
+	err = os.WriteFile(uploadFile, []byte(uploadData), 0666)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +65,7 @@ http: <options> server
 		{
 			args:   []string{"-h"},
 			err:    errors.New("flag: help requested"),
-			output: usageMessage,
+			output: string(usageMessage),
 		},
 		{
 			args:   []string{ts.URL + "/download"},
@@ -93,6 +97,50 @@ http: <options> server
 			err:    nil,
 			output: fmt.Sprintf("JSON request received: %d bytes\n", len(jsonBody)),
 		},
+		{
+			args: []string{
+				"-verb", "POST",
+				"-upload", uploadFile,
+				"-form-data", "filename=test.data",
+				"-form-data", "version=0.1",
+				ts.URL + "/upload",
+			},
+			err: nil,
+			output: fmt.Sprintf(
+				"HTTP POST request received:filename=test.data,version=0.1,upload=%d bytes",
+				len(uploadFile),
+			),
+		},
+		{
+			args: []string{
+				"-verb", "POST",
+				"-body-file", jsonBody,
+				"-upload", uploadFile,
+				"-form-data", "filename=test.data",
+				"-form-data", "version=0.1",
+				ts.URL + "/upload",
+			},
+			err: nil,
+			output: fmt.Sprintf(
+				"HTTP POST request received:json=%d bytes,filename=test.data,version=0.1,upload=%d bytes",
+				len(jsonBody), len(uploadFile),
+			),
+		},
+		{
+			args: []string{
+				"-verb", "POST",
+				"-body", jsonBody,
+				"-upload", uploadFile,
+				"-form-data", "filename=test.data",
+				"-form-data", "version=0.1",
+				ts.URL + "/upload",
+			},
+			err: nil,
+			output: fmt.Sprintf(
+				"HTTP POST request received:json=%d bytes,filename=test.data,version=0.1,upload=%d bytes",
+				len(jsonBody), len(uploadFile),
+			),
+		},
 	}
 	byteBuf := new(bytes.Buffer)
 	for i, tc := range testConfigs {
@@ -113,7 +161,16 @@ http: <options> server
 		if len(tc.output) != 0 {
 			gotOutput := byteBuf.String()
 			if tc.output != gotOutput {
-				t.Errorf("Expected output to be:\n%#v\n\n%#v\n", tc.output, gotOutput)
+				expectedFileName := fmt.Sprintf("expected-output-%d", i)
+				t.Errorf(
+					"Expected output to be:\n%s\n\nGot:\n%s\n\n"+
+						"Writing expected data to file: %s",
+					tc.output, gotOutput,
+					expectedFileName,
+				)
+				if ok := os.WriteFile(expectedFileName, []byte(gotOutput), 0666); ok != nil {
+					t.Fatal("Error writing expected output to file", err)
+				}
 			}
 		}
 		byteBuf.Reset()
