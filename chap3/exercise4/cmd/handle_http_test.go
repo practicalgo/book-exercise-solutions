@@ -31,9 +31,9 @@ func startTestHttpServer() *httptest.Server {
 }
 
 func TestHandleHttp(t *testing.T) {
-	usageMessage, err := os.ReadFile("httpCmdUsage.golden.1")
+	usageMessage, err := os.ReadFile("../testdata/expectedGolden.cmd.httpCmdUsage")
 	if err != nil {
-		t.Fatalf("error reading httpCmdUsage.golden.1")
+		t.Fatalf("error reading expectedGolden.cmd.httpCmdUsage")
 	}
 
 	ts := startTestHttpServer()
@@ -158,19 +158,17 @@ func TestHandleHttp(t *testing.T) {
 			t.Fatalf("Expected error %v, got %v", tc.err, err)
 		}
 
-		if len(tc.output) != 0 {
-			gotOutput := byteBuf.String()
-			if tc.output != gotOutput {
-				expectedFileName := fmt.Sprintf("expected-output-%d", i)
-				t.Errorf(
-					"Expected output to be:\n%s\n\nGot:\n%s\n\n"+
-						"Writing expected data to file: %s",
-					tc.output, gotOutput,
-					expectedFileName,
-				)
-				if ok := os.WriteFile(expectedFileName, []byte(gotOutput), 0666); ok != nil {
-					t.Fatal("Error writing expected output to file", err)
-				}
+		gotOutput := byteBuf.String()
+		if tc.output != gotOutput {
+			gotOutputFilename := fmt.Sprintf("testdata/gotOutput.cmd.%d", i)
+			t.Errorf(
+				"Expected output to be:\n%s\n\nGot:\n%s\n\n"+
+					"Writing expected data to file: %s",
+				tc.output, gotOutput,
+				gotOutputFilename,
+			)
+			if ok := os.WriteFile(gotOutputFilename, []byte(gotOutput), 0666); ok != nil {
+				t.Fatal("Error writing expected output to file", err)
 			}
 		}
 		byteBuf.Reset()

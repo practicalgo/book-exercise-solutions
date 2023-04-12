@@ -2,36 +2,36 @@ package main
 
 import (
 	"bytes"
+	"fmt"
+	"os"
 	"testing"
 )
 
 func TestHandleCommand(t *testing.T) {
-	usageMessage :=     	Method to call
-`
 	testConfigs := []struct {
-		args   []string
-		output string
-		err    error
+		args         []string
+		goldenOutput string
+		err          error
 	}{
 		{
-			args:   []string{},
-			err:    errInvalidSubCommand,
-			output: "Invalid sub-command specified\n" + usageMessage,
+			args:         []string{},
+			err:          errInvalidSubCommand,
+			goldenOutput: "expectedGolden.0",
 		},
 		{
-			args:   []string{"-h"},
-			err:    nil,
-			output: usageMessage,
+			args:         []string{"-h"},
+			err:          nil,
+			goldenOutput: "expectedGolden.1",
 		},
 		{
-			args:   []string{"foo"},
-			err:    errInvalidSubCommand,
-			output: "Invalid sub-command specified\n" + usageMessage,
+			args:         []string{"foo"},
+			err:          errInvalidSubCommand,
+			goldenOutput: "expectedGolden.2",
 		},
 	}
 
 	byteBuf := new(bytes.Buffer)
-	for _, tc := range testConfigs {
+	for i, tc := range testConfigs {
 		err := handleCommand(byteBuf, tc.args)
 		if tc.err == nil && err != nil {
 			t.Fatalf("Expected nil error, got %v", err)
@@ -41,10 +41,21 @@ func TestHandleCommand(t *testing.T) {
 			t.Fatalf("Expected error %v, got %v", tc.err, err)
 		}
 
-		if len(tc.output) != 0 {
-			gotOutput := byteBuf.String()
-			if tc.output != gotOutput {
-				t.Errorf("Expected output to be: %#v, Got: %#v", tc.output, gotOutput)
+		gotOutput := byteBuf.String()
+		expectedOutput, err := os.ReadFile("testdata/" + tc.goldenOutput)
+		if err != nil {
+			t.Fatalf("error reading expected golden output: %s:%s\n", tc.goldenOutput, err)
+		}
+		if string(expectedOutput) != gotOutput {
+			gotOutputFilename := fmt.Sprintf("testdata/gotOutput.%d", i)
+			t.Errorf(
+				"Expected output to be:\n%s\n\nGot:\n%s\n\n"+
+					"Writing expected data to file: %s",
+				string(expectedOutput), gotOutput,
+				gotOutputFilename,
+			)
+			if ok := os.WriteFile(gotOutputFilename, []byte(gotOutput), 0666); ok != nil {
+				t.Fatal("Error writing expected output to file", err)
 			}
 		}
 		byteBuf.Reset()
