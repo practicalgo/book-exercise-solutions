@@ -11,9 +11,11 @@ import (
 )
 
 type httpConfig struct {
-	url      string
-	postBody string
-	verb     string
+	url        string
+	postBody   string
+	verb       string
+	uploadFile string
+	formDataKv string
 }
 
 func validateConfig(c httpConfig) error {
@@ -28,7 +30,7 @@ func validateConfig(c httpConfig) error {
 		return ErrInvalidHTTPMethod
 	}
 
-	if c.verb == http.MethodPost && len(c.postBody) == 0 {
+	if c.verb == http.MethodPost && len(c.postBody) == 0 && len(c.uploadFile) == 0 && len(c.formDataKv) == 0 {
 		return ErrInvalidHTTPPostRequest
 	}
 
@@ -62,8 +64,6 @@ func HandleHttp(w io.Writer, args []string) error {
 	var outputFile string
 	var postBodyFile string
 	var responseBody []byte
-	var uploadFile string
-	var formDataKv string
 
 	fs := flag.NewFlagSet("http", flag.ContinueOnError)
 	fs.SetOutput(w)
@@ -71,8 +71,8 @@ func HandleHttp(w io.Writer, args []string) error {
 	fs.StringVar(&c.postBody, "body", "", "JSON data for HTTP POST request")
 	fs.StringVar(&postBodyFile, "body-file", "", "File containing JSON data for HTTP POST request")
 	fs.StringVar(&outputFile, "output", "", "File path to write the response into")
-	fs.StringVar(&uploadFile, "upload", "", "Path of file to upload")
-	fs.StringVar(&formDataKv, "form-data", "", "Key value pairs (key=value) to send as form data")
+	fs.StringVar(&c.uploadFile, "upload", "", "Path of file to upload")
+	fs.StringVar(&c.formDataKv, "form-data", "", "Key value pairs (key=value) to send as form data")
 
 	fs.Usage = func() {
 		var usageString = `

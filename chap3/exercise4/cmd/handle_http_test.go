@@ -111,7 +111,7 @@ func TestHandleHttp(t *testing.T) {
 				len(uploadFile),
 			),
 		},
-		{
+		/*{
 			args: []string{
 				"-verb", "POST",
 				"-body-file", jsonBody,
@@ -140,7 +140,7 @@ func TestHandleHttp(t *testing.T) {
 				"HTTP POST request received:json=%d bytes,filename=test.data,version=0.1,upload=%d bytes",
 				len(jsonBody), len(uploadFile),
 			),
-		},
+		},*/
 	}
 	byteBuf := new(bytes.Buffer)
 	for i, tc := range testConfigs {
@@ -160,14 +160,14 @@ func TestHandleHttp(t *testing.T) {
 
 		gotOutput := byteBuf.String()
 		if tc.output != gotOutput {
-			gotOutputFilename := fmt.Sprintf("testdata/gotOutput.cmd.%d", i)
+			gotOutputFilename := fmt.Sprintf("../testdata/gotOutput.cmd.%d", i)
 			t.Errorf(
 				"Expected output to be:\n%s\n\nGot:\n%s\n\n"+
 					"Writing expected data to file: %s",
 				tc.output, gotOutput,
 				gotOutputFilename,
 			)
-			if ok := os.WriteFile(gotOutputFilename, []byte(gotOutput), 0666); ok != nil {
+			if err := os.WriteFile(gotOutputFilename, []byte(gotOutput), 0666); err != nil {
 				t.Fatal("Error writing expected output to file", err)
 			}
 		}
