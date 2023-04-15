@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -19,13 +21,58 @@ func startTestHttpServer() *httptest.Server {
 		fmt.Fprintf(w, "this is a response")
 	})
 	mux.HandleFunc("/upload", func(w http.ResponseWriter, req *http.Request) {
+
 		defer req.Body.Close()
-		data, err := io.ReadAll(req.Body)
+
+		// the value of the Content-Type header for multipart/formdata
+		// will be multipart/form-data; boundary=<boundary string>
+		// so, we use the mime.ParseMediaType() functiont only get the
+		// mimetype
+		contentType := req.Header.Get("Content-Type")
+		mimeType, _, err := mime.ParseMediaType(contentType)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		fmt.Fprintf(w, "JSON request received: %d bytes", len(data))
+
+		switch mimeType {
+		case "application/json":
+			data, err := io.ReadAll(req.Body)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			fmt.Fprintf(w, "JSON request received: %d bytes", len(data))
+		case "multipart/form-data":
+			var jsonBytes, fileBytes int
+			err := req.ParseMultipartForm(5000)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			mForm := req.MultipartForm
+			// get JSON data if any
+			jsonData := mForm.Value["jsondata"]
+			if len(jsonData) != 0 {
+				jsonBytes = len(jsonData[0])
+			}
+			// get other form fields if any
+			var formField []string
+			for k, v := range mForm.Value {
+				formField = append(formField, fmt.Sprintf("%s=%s", k, v[0]))
+			}
+			formFields := strings.Join(formField, ",")
+
+			// Get file data if any
+			f := mForm.File["filedata"]
+			if len(f) != 0 {
+				fileBytes = int(f[0].Size)
+			}
+			fmt.Fprintf(w, "HTTP POST request received:%s,jsondata=%d bytes,upload=%d bytes", formFields, jsonBytes, fileBytes)
+		default:
+			http.Error(w, fmt.Sprintf("unrecognized Content-Type:%s", contentType), http.StatusBadRequest)
+			return
+		}
 	})
 	return httptest.NewServer(mux)
 }
@@ -107,8 +154,8 @@ func TestHandleHttp(t *testing.T) {
 			},
 			err: nil,
 			output: fmt.Sprintf(
-				"HTTP POST request received:filename=test.data,version=0.1,upload=%d bytes",
-				len(uploadFile),
+				"HTTP POST request received:filename=test.data,version=0.1,jsondata=0 bytes,upload=%d bytes\n",
+				len(uploadData),
 			),
 		},
 		/*{
@@ -167,6 +214,7 @@ func TestHandleHttp(t *testing.T) {
 				tc.output, gotOutput,
 				gotOutputFilename,
 			)
+			t.Log(len(tc.output), len(gotOutput))
 			if err := os.WriteFile(gotOutputFilename, []byte(gotOutput), 0666); err != nil {
 				t.Fatal("Error writing expected output to file", err)
 			}
