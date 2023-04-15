@@ -59,6 +59,9 @@ func startTestHttpServer() *httptest.Server {
 			// get other form fields if any
 			var formField []string
 			for k, v := range mForm.Value {
+				if k == "jsondata" {
+					continue
+				}
 				formField = append(formField, fmt.Sprintf("%s=%s", k, v[0]))
 			}
 			formFields := strings.Join(formField, ",")
@@ -158,10 +161,10 @@ func TestHandleHttp(t *testing.T) {
 				len(uploadData),
 			),
 		},
-		/*{
+		{
 			args: []string{
 				"-verb", "POST",
-				"-body-file", jsonBody,
+				"-body-file", jsonBodyFile,
 				"-upload", uploadFile,
 				"-form-data", "filename=test.data",
 				"-form-data", "version=0.1",
@@ -169,8 +172,8 @@ func TestHandleHttp(t *testing.T) {
 			},
 			err: nil,
 			output: fmt.Sprintf(
-				"HTTP POST request received:json=%d bytes,filename=test.data,version=0.1,upload=%d bytes",
-				len(jsonBody), len(uploadFile),
+				"HTTP POST request received:filename=test.data,version=0.1,jsondata=%d bytes,upload=%d bytes\n",
+				len(jsonBody), len(uploadData),
 			),
 		},
 		{
@@ -184,10 +187,10 @@ func TestHandleHttp(t *testing.T) {
 			},
 			err: nil,
 			output: fmt.Sprintf(
-				"HTTP POST request received:json=%d bytes,filename=test.data,version=0.1,upload=%d bytes",
-				len(jsonBody), len(uploadFile),
+				"HTTP POST request received:filename=test.data,version=0.1,jsondata=%d bytes,upload=%d bytes\n",
+				len(jsonBody), len(uploadData),
 			),
-		},*/
+		},
 	}
 	byteBuf := new(bytes.Buffer)
 	for i, tc := range testConfigs {
