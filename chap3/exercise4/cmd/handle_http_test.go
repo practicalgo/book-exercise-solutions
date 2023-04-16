@@ -10,7 +10,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -44,34 +43,29 @@ func startTestHttpServer() *httptest.Server {
 			}
 			fmt.Fprintf(w, "JSON request received: %d bytes", len(data))
 		case "multipart/form-data":
-			var jsonBytes, fileBytes int
+			var fileBytes int
 			err := req.ParseMultipartForm(5000)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
 			mForm := req.MultipartForm
-			// get JSON data if any
-			jsonData := mForm.Value["jsondata"]
-			if len(jsonData) != 0 {
-				jsonBytes = len(jsonData[0])
-			}
-			// get other form fields if any
-			var formField []string
+
+			// get form fields if any
+			formField := make(map[string]string)
 			for k, v := range mForm.Value {
-				if k == "jsondata" {
-					continue
-				}
-				formField = append(formField, fmt.Sprintf("%s=%s", k, v[0]))
+				formField[k] = v[0]
 			}
-			formFields := strings.Join(formField, ",")
 
 			// Get file data if any
 			f := mForm.File["filedata"]
 			if len(f) != 0 {
 				fileBytes = int(f[0].Size)
 			}
-			fmt.Fprintf(w, "HTTP POST request received:%s,jsondata=%d bytes,upload=%d bytes", formFields, jsonBytes, fileBytes)
+			fmt.Fprintf(
+				w, "HTTP POST request received:filename=%s,version=%s,jsondata=%d bytes,upload=%d bytes",
+				formField["filename"], formField["version"], len(formField["jsondata"]), fileBytes,
+			)
 		default:
 			http.Error(w, fmt.Sprintf("unrecognized Content-Type:%s", contentType), http.StatusBadRequest)
 			return
