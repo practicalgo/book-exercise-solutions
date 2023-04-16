@@ -1,0 +1,30 @@
+Invalid sub-command specified
+Usage: mync [http|grpc] -h
+
+http: A HTTP client.
+
+http: <options> server
+
+Options: 
+  -body string
+    	JSON data for HTTP POST request
+  -body-file string
+    	File containing JSON data for HTTP POST request
+  -form-data value
+    	Add one or more key value pairs (key=value) to send as form data
+  -output string
+    	File path to write the response into
+  -upload string
+    	Path of file to upload
+  -verb string
+    	HTTP method (default "GET")
+
+grpc: A gRPC client.
+
+grpc: <options> server
+
+Options: 
+  -body string
+    	Body of request
+  -method string
+    	Method to call
